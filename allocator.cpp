@@ -141,9 +141,9 @@ int spill()
     }
     int pr = physReg[spilledVR];
 
-    Inst load_line(-2, {LOADI, loadI}, loc, -1, 0);
+    Inst load_line(-2, -1,{LOADI, loadI}, loc, -1, 0);
     load_line.dest.pr = load_line.dest.sr;
-    Inst store_line(-2, {MEMOP, store}, pr, 0, -1);
+    Inst store_line(-2, -1,{MEMOP, store}, pr, 0, -1);
     store_line.op1.pr = store_line.op1.sr;
     store_line.op2.pr = store_line.op2.sr;
 
@@ -160,10 +160,10 @@ int spill()
 
 int retrieve(int vr)
 {
-    Inst loadI_line(-1, {LOADI, loadI}, memLocs[vr], -1, 0);
+    Inst loadI_line(-1, -1,{LOADI, loadI}, memLocs[vr], -1, 0);
     loadI_line.dest.pr = 0;
     int reg = fetchPR(vr);
-    Inst load_line(-1, {MEMOP, load}, 0, -1, reg);
+    Inst load_line(-1, -1,{MEMOP, load}, 0, -1, reg);
     load_line.op1.pr = 0;
     load_line.dest.pr = reg;
     resultILOC.push_back(loadI_line);
@@ -179,7 +179,6 @@ int fetchPR(int vr)
     // for(auto num : freeRegs) cout << num << " ";
     // cout << "\n";
     int reg;
-    int spilledVR;
     // if there is an available register
     if (freeRegs.back() != 0)
     {
@@ -313,7 +312,77 @@ void printNodes(std::vector<Inst> &block)
 }
 void printEdges(std::vector<Inst> &block)
 {
+
     std::cout << "returning all the edges association" << std::endl;
+    std::vector<std::vector<int>> output(block.size()+2);
+    std::vector<int> lookup(vrName+2,-1);
+    for(auto line : block)
+    {
+        int line_num = line.idx;
+        int label = line.label;
+
+        switch(line.opcode.cat) {
+            case ARITHOP: {
+                int vr1 = line.op1.vr;
+                int vr2 = line.op2.vr;
+                int dest = line.dest.vr;
+
+                if(lookup[vr1] == -1 or lookup[vr2] == -1) {
+                    std::cout << " bad bad bad " << std::endl;
+                    std::exit(1);
+                }
+                
+                output[label].push_back(lookup[vr1]);
+                output[label].push_back(lookup[vr2]);
+                lookup[dest] = label;
+            }
+                break;
+
+            case LOADI: {
+                int dest = line.dest.vr;
+                lookup[dest] = label;
+            }
+                break;
+            case MEMOP: {
+                // load is op1 dest
+                if(line.opcode.op == load) {
+                    int vr1 = line.op1.vr;
+                    int dest = line.dest.vr;
+
+                    if(lookup[vr1] == -1) {
+                        std::cout << "bad bad bad" << std::endl;
+                        std::exit(1);
+                    }
+                    output[label].push_back(lookup[vr1]);
+                    lookup[dest] = label;
+
+                } else { // store
+                    int vr1 = line.op1.vr;
+                    int vr2 = line.op2.vr;
+
+                    if(lookup[vr1] == -1 or lookup[vr2] == -1) {
+                        std::cout << " bad bad bad " << std::endl;
+                        std::exit(1);
+                    }
+
+                    output[label].push_back(lookup[vr1]);
+                    output[label].push_back(lookup[vr2]);
+                }
+                // store is op1 op2
+            }
+            default:
+                break;
+        }
+    }
+
+    for (int i = 1; i < output.size(); ++i) {
+        std::cout << i << ':' ;
+        for(int num : output[i]) {
+            std::cout << ' ' << num;
+        }
+        std::cout << '\n';
+    }
+
     /*
     output: List[List[Int]] = [[]*number of lines]
     lookup: List[Int] = [-1]*vrName (number of vr's)
@@ -337,6 +406,8 @@ void printEdges(std::vector<Inst> &block)
         [5,6]
     ]
     */
+    
+
 }
 void printWeights(std::vector<Inst> &block)
 {

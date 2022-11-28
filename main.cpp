@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     bool help;
     bool print;
     bool tokens;
-    bool allocate;
+    bool allocate_flag;
     print = false;
     help = false;
     string file;
@@ -35,9 +35,9 @@ int main(int argc, char *argv[])
             print_regs = atoi(optarg);
             break;
         case 'k':
-            allocate = true num_regs = atoi(optarg);
+            allocate_flag = true;
+            num_regs = atoi(optarg);
             break;
-        case 'h':
 
         default:
             cout << "invalid flag/flag arguments" << endl;
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     {
         printHelp();
     }
-    else if (allocate)
+    else if (allocate_flag)
     {
         internals = scanner(file);
         computeLastUse(internals);
@@ -71,7 +71,9 @@ int main(int argc, char *argv[])
         // scan file contents
         internals = scanner(file);
         // this will populate the IR with vr's and nu (not needed)
-        computeLastUse(internals)
+        computeLastUse(internals);
+        printEdges(internals);
+        
 
         // for NODES: need to write a print function and increment the index by one
     }
