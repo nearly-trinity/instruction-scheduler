@@ -57,6 +57,7 @@ void printOpcode(OpInst token) {
 }
 
 void printILOCLine(Inst &iloc, int regFlag) {
+    cout << "    n" << iloc.label << ": ";
     switch (iloc.opcode.cat) {
     case ARITHOP:
         printOpcode(iloc.opcode);

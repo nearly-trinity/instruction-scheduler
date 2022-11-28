@@ -306,10 +306,6 @@ std::vector<Inst> allocate(std::vector<Inst> &block, int prs)
     return resultILOC;
 }
 
-void printNodes(std::vector<Inst> &block)
-{
-    std::cout << "standard node printing" << std::endl;
-}
 void printEdges(std::vector<Inst> &block)
 {
 
