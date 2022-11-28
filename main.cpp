@@ -8,8 +8,12 @@ using namespace std;
 
 vector<Inst> internals;
 
-int main(int argc, char *argv[]) {
-    bool help; bool print; bool tokens; 
+int main(int argc, char *argv[])
+{
+    bool help;
+    bool print;
+    bool tokens;
+    bool allocate;
     print = false;
     help = false;
     string file;
@@ -17,41 +21,58 @@ int main(int argc, char *argv[]) {
     int num_regs;
     int print_regs = 2;
     file = argv[1];
-    while((opt = getopt(argc, argv, "hpt:k:")) != -1) {
-        switch(opt) {
-            case 'h':
-                help = true;
-                break;
-            case 'p':
-                print = true;
-                break;
-            case 't':
-                print_regs = atoi(optarg);
-                break;
-            case 'k':
-                num_regs = atoi(optarg);
-                break;
-            default:
-                cout << "invalid flag/flag arguments" << endl;
-                exit(1);
-                break;
+    while ((opt = getopt(argc, argv, "hpt:k:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'h':
+            help = true;
+            break;
+        case 'p':
+            print = true;
+            break;
+        case 't':
+            print_regs = atoi(optarg);
+            break;
+        case 'k':
+            allocate = true num_regs = atoi(optarg);
+            break;
+        case 'h':
+
+        default:
+            cout << "invalid flag/flag arguments" << endl;
+            exit(1);
+            break;
         }
     }
-    if (optind >= argc) {
+    if (optind >= argc)
+    {
         fprintf(stderr, "Expected argument after options\n");
     }
     file = argv[optind];
-    if(help) {
+    if (help)
+    {
         printHelp();
-    } else {
+    }
+    else if (allocate)
+    {
         internals = scanner(file);
         computeLastUse(internals);
 
         std::vector<Inst> newRegs = allocate(internals, num_regs);
-        if(print) {
+        if (print)
+        {
             tabularILOC(newRegs);
-                        }
+        }
         printILOC(newRegs, print_regs);
     }
-    
+    else
+    {
+        // scan file contents
+        internals = scanner(file);
+        // this will populate the IR with vr's and nu (not needed)
+        computeLastUse(internals)
+
+        // for NODES: need to write a print function and increment the index by one
+    }
 }

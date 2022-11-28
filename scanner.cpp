@@ -16,8 +16,9 @@ std::ifstream in;
 char c; int line_num;
 int maxRegValue = -1;
 
-Inst::Inst(int line, OpInst opc, int o1, int o2, int d) {
+Inst::Inst(int line, int lbl, OpInst opc, int o1, int o2, int d) {
     idx = line;
+    label = lbl;
     opcode = opc;
     switch(opc.cat) {
         case LOADI:
@@ -191,7 +192,6 @@ Token getInstruction() {
 
 Token emptyToken = {COMMENT, {NOP, nop}, -1};
 
-
 void assertTrue(bool b, string message) {
     if(!b) {
         cout << "fatal error: " << message << endl;
@@ -212,21 +212,21 @@ void readLine(int line_num) {
         case MEMOP:
             assertTrue(tokens[0].cat == REG && tokens[1].cat == ARROW, "reading memop");
             if(instruction.inst.op == load)  
-                internalRep.push_back(Inst(line_num, instruction.inst, tokens[0].reg, -1, tokens[2].reg));
+                internalRep.push_back(Inst(line_num, line_num+1, instruction.inst, tokens[0].reg, -1, tokens[2].reg));
             else // if store
-                internalRep.push_back(Inst(line_num, instruction.inst, tokens[0].reg, tokens[2].reg, -1));
+                internalRep.push_back(Inst(line_num, line_num+1, instruction.inst, tokens[0].reg, tokens[2].reg, -1));
             break;
         case LOADI:
-            internalRep.push_back(Inst(line_num, instruction.inst, tokens[0].reg, -1, tokens[2].reg));
+            internalRep.push_back(Inst(line_num, line_num+1, instruction.inst, tokens[0].reg, -1, tokens[2].reg));
             break;
         case ARITHOP:
-            internalRep.push_back(Inst(line_num, instruction.inst, tokens[0].reg, tokens[2].reg, tokens[4].reg));
+            internalRep.push_back(Inst(line_num, line_num+1, instruction.inst, tokens[0].reg, tokens[2].reg, tokens[4].reg));
             break;
         case NOP:
-            internalRep.push_back(Inst(line_num, instruction.inst, -1,-1,-1));
+            internalRep.push_back(Inst(line_num, line_num+1, instruction.inst, -1,-1,-1));
             break;
         case OUTPUT:
-            internalRep.push_back(Inst(line_num, instruction.inst, tokens[0].reg,-1,-1));
+            internalRep.push_back(Inst(line_num, line_num+1, instruction.inst, tokens[0].reg,-1,-1));
             break;
         default:
             cout << "SOMETHING VERY WRONG\n";
