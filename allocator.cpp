@@ -327,7 +327,7 @@ void printEdges(std::vector<Inst> &block)
                     std::cout << " bad bad bad " << std::endl;
                     std::exit(1);
                 }
-                
+
                 output[label].push_back(lookup[vr1]);
                 output[label].push_back(lookup[vr2]);
                 lookup[dest] = label;
@@ -372,11 +372,15 @@ void printEdges(std::vector<Inst> &block)
     }
 
     for (int i = 1; i < output.size(); ++i) {
-        std::cout << i << ':' ;
-        for(int num : output[i]) {
-            std::cout << ' ' << num;
+        std::cout << "n" << i << " \{";
+        for(int j = 0; j < output[i].size(); j++){
+        int num = output[i][j];
+            std::cout << " n" << num;
+            if(j + 1 < output[i].size()){
+              std::cout << ",";
+            }
         }
-        std::cout << '\n';
+        std::cout << " \} \n";
     }
 
     /*
@@ -402,7 +406,7 @@ void printEdges(std::vector<Inst> &block)
         [5,6]
     ]
     */
-    
+
 
 }
 void printWeights(std::vector<Inst> &block)
