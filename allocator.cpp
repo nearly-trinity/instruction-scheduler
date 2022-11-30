@@ -2,6 +2,9 @@
 #include <vector>
 #include <string>
 #include <climits>
+#include <set>
+#include <algorithm>
+#include <unordered_map>
 
 using namespace std;
 
@@ -141,9 +144,9 @@ int spill()
     }
     int pr = physReg[spilledVR];
 
-    Inst load_line(-2, -1,{LOADI, loadI}, loc, -1, 0);
+    Inst load_line(-2, -1, {LOADI, loadI}, loc, -1, 0);
     load_line.dest.pr = load_line.dest.sr;
-    Inst store_line(-2, -1,{MEMOP, store}, pr, 0, -1);
+    Inst store_line(-2, -1, {MEMOP, store}, pr, 0, -1);
     store_line.op1.pr = store_line.op1.sr;
     store_line.op2.pr = store_line.op2.sr;
 
@@ -160,10 +163,10 @@ int spill()
 
 int retrieve(int vr)
 {
-    Inst loadI_line(-1, -1,{LOADI, loadI}, memLocs[vr], -1, 0);
+    Inst loadI_line(-1, -1, {LOADI, loadI}, memLocs[vr], -1, 0);
     loadI_line.dest.pr = 0;
     int reg = fetchPR(vr);
-    Inst load_line(-1, -1,{MEMOP, load}, 0, -1, reg);
+    Inst load_line(-1, -1, {MEMOP, load}, 0, -1, reg);
     load_line.op1.pr = 0;
     load_line.dest.pr = reg;
     resultILOC.push_back(loadI_line);
@@ -306,83 +309,96 @@ std::vector<Inst> allocate(std::vector<Inst> &block, int prs)
     return resultILOC;
 }
 
-void printEdges(std::vector<Inst> &block)
+std::vector<std::vector<int>> printEdges(std::vector<Inst> &block)
 {
 
     std::cout << "returning all the edges association" << std::endl;
-    std::vector<std::vector<int>> output(block.size()+2);
-    std::vector<int> lookup(vrName+2,-1);
-    for(auto line : block)
+    std::vector<std::vector<int>> output(block.size() + 1);
+    std::vector<int> lookup(vrName + 2, -1);
+    for (auto line : block)
     {
         int line_num = line.idx;
         int label = line.label;
 
-        switch(line.opcode.cat) {
-            case ARITHOP: {
+        switch (line.opcode.cat)
+        {
+        case ARITHOP:
+        {
+            int vr1 = line.op1.vr;
+            int vr2 = line.op2.vr;
+            int dest = line.dest.vr;
+
+            if (lookup[vr1] == -1 || lookup[vr2] == -1)
+            {
+                std::cout << " bad bad bad " << std::endl;
+                std::exit(1);
+            }
+
+            output[label].push_back(lookup[vr1]);
+            output[label].push_back(lookup[vr2]);
+            lookup[dest] = label;
+        }
+        break;
+
+        case LOADI:
+        {
+            int dest = line.dest.vr;
+            lookup[dest] = label;
+        }
+        break;
+        case MEMOP:
+        {
+            // load is op1 dest
+            if (line.opcode.op == load)
+            {
                 int vr1 = line.op1.vr;
-                int vr2 = line.op2.vr;
                 int dest = line.dest.vr;
 
-                if(lookup[vr1] == -1 or lookup[vr2] == -1) {
+                if (lookup[vr1] == -1)
+                {
+                    std::cout << "bad bad bad" << std::endl;
+                    std::exit(1);
+                }
+                output[label].push_back(lookup[vr1]);
+                lookup[dest] = label;
+            }
+            else
+            { // store
+                int vr1 = line.op1.vr;
+                int vr2 = line.op2.vr;
+
+                if (lookup[vr1] == -1 || lookup[vr2] == -1)
+                {
                     std::cout << " bad bad bad " << std::endl;
                     std::exit(1);
                 }
 
                 output[label].push_back(lookup[vr1]);
                 output[label].push_back(lookup[vr2]);
-                lookup[dest] = label;
             }
-                break;
-
-            case LOADI: {
-                int dest = line.dest.vr;
-                lookup[dest] = label;
-            }
-                break;
-            case MEMOP: {
-                // load is op1 dest
-                if(line.opcode.op == load) {
-                    int vr1 = line.op1.vr;
-                    int dest = line.dest.vr;
-
-                    if(lookup[vr1] == -1) {
-                        std::cout << "bad bad bad" << std::endl;
-                        std::exit(1);
-                    }
-                    output[label].push_back(lookup[vr1]);
-                    lookup[dest] = label;
-
-                } else { // store
-                    int vr1 = line.op1.vr;
-                    int vr2 = line.op2.vr;
-
-                    if(lookup[vr1] == -1 or lookup[vr2] == -1) {
-                        std::cout << " bad bad bad " << std::endl;
-                        std::exit(1);
-                    }
-
-                    output[label].push_back(lookup[vr1]);
-                    output[label].push_back(lookup[vr2]);
-                }
-                // store is op1 op2
-            }
-            default:
-                break;
+            // store is op1 op2
+        }
+        default:
+            break;
         }
     }
 
-    for (int i = 1; i < output.size(); ++i) {
+    for (int i = 1; i < output.size(); ++i)
+    {
         std::cout << "n" << i << " \{";
-        for(int j = 0; j < output[i].size(); j++){
-        int num = output[i][j];
+        for (int j = 0; j < output[i].size(); j++)
+        {
+            int num = output[i][j];
             std::cout << " n" << num;
-            if(j + 1 < output[i].size()){
-              std::cout << ",";
+            if (j + 1 < output[i].size())
+            {
+                std::cout << ",";
             }
         }
         std::cout << " \} \n";
     }
 
+    return output;
     /*
     output: List[List[Int]] = [[]*number of lines]
     lookup: List[Int] = [-1]*vrName (number of vr's)
@@ -406,10 +422,74 @@ void printEdges(std::vector<Inst> &block)
         [5,6]
     ]
     */
-
-
 }
-void printWeights(std::vector<Inst> &block)
+
+std::unordered_map<Instructions, int> latencyLookup;
+
+void traverse(int root, std::vector<int> &weights, std::vector<std::vector<int>> graph, std::vector<Inst> &block)
 {
-    std::cout << "returning all the weighted edges (not needed for milestone)" << std::endl;
+    std::cout << "traversing: " << root << std::endl;
+    // we know graph is acyclic
+    // can probably do basic DFS here
+    std::set<int> seen;
+    std::vector<int> stack;
+    stack.push_back(root);
+    while (stack.size() != 0)
+    {
+        int node = stack.back();
+        stack.pop_back();
+        seen.insert(node);
+        // for each child of node, update its value in weights
+        for (int child : graph[node])
+        {
+            if (seen.find(child) != seen.end())
+                continue;
+
+            int weight = weights[node] + latencyLookup[block[node - 1].opcode.op];
+            weights[child] = std::min(weight, weights[child]);
+            stack.push_back(child);
+        }
+    }
+}
+
+void printWeights(std::vector<Inst> &block, std::vector<std::vector<int>> graph)
+{
+    latencyLookup.insert({
+        {load, 3},
+        {loadI, 1},
+        {store, 3},
+        {mult, 2},
+        {add, 1},
+        {sub, 1},
+        {lshift, 1},
+        {rshift, 1},
+        {nop, 1},
+        {output, 1},
+    });
+
+    std::set<int> nodes;
+    // init list of all nodes in the graph
+    for (int i = 1; i < block.size() + 1; ++i)
+        nodes.insert(i);
+
+    // for each key (i) and value (graph[i])
+    for (int i = 1; i < graph.size(); ++i)
+    {
+        for (int node : graph[i])
+        {
+            // if anything depends on it remove it
+            nodes.erase(node);
+        }
+    }
+    // nodes now contains all roots
+
+    // traverse graph from the nodes in nodes
+    std::vector<int> weights(graph.size());
+    for (auto itr : nodes)
+    {
+        // for each root, traverse through all of its neighbors and calculate their weights
+        traverse(itr, weights, graph, block);
+    }
+
+    return;
 }

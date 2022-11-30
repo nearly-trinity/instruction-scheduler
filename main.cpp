@@ -72,10 +72,8 @@ int main(int argc, char *argv[])
         internals = scanner(file);
         // this will populate the IR with vr's and nu (not needed)
         computeLastUse(internals);
-        printILOC(internals,1);
-        printEdges(internals);
-
-
-        // for NODES: need to write a print function and increment the index by one
+        printILOC(internals, 1);
+        graph = printEdges(internals);
+        printWeights(graph)
     }
 }
