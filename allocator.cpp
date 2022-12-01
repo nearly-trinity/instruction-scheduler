@@ -3,6 +3,7 @@
 #include <string>
 #include <climits>
 #include <unordered_map>
+#include <algorithm>
 
 using namespace std;
 
@@ -383,28 +384,50 @@ void printEdges(std::vector<Inst> &block)
     for(auto line: block){
       int label = line.label;
       //std::cout << label << endl;
-      if(line.opcode.op == store || line.opcode.op == store || line.opcode.op == load)
+      if(line.opcode.op == output || line.opcode.op == store || line.opcode.op == load){
       switch(line.opcode.op){
         case output:{
           if(outputLookup.size()>0)
+          if(std::find(output1[label].begin(), output1[label].end(), outputLookup.back()) == output1[label].end())
           output1[label].push_back(outputLookup.back());
+
+          if(storeLookup.size()>0){
+            //std::cout << storeLookup.back() << endl;
+          if(std::find(output1[label].begin(), output1[label].end(), storeLookup.back()) == output1[label].end()){
+              output1[label].push_back(storeLookup.back());
+              //std::cout << storeLookup.back() << endl;
+            }
+          }
         }
         case store:{
           if(outputLookup.size()>0)
+          if(std::find(output1[label].begin(), output1[label].end(), outputLookup.back()) == output1[label].end())
           output1[label].push_back(outputLookup.back());
           for(int k = 0; k < loadLookup.size(); k++){
+            if(std::find(output1[label].begin(), output1[label].end(), loadLookup[k]) == output1[label].end())
+            if((storeLookup.size() > 0 && storeLookup.back() <= loadLookup[k]) || storeLookup.size() == 0)
             output1[label].push_back(loadLookup[k]);
+          }
+        }
+        case load:{
+          if(storeLookup.size()>0){
+          if(std::find(output1[label].begin(), output1[label].end(), storeLookup.back()) == output1[label].end()){
+              output1[label].push_back(storeLookup.back());
+              //std::cout << label << endl;
+            }
           }
         }
         //all
         default:
-          if(storeLookup.size()>0)
-          output1[label].push_back(storeLookup.back());
+          break;
       }
-      if(line.opcode.op == store || line.opcode.op == store || line.opcode.op == load)
+    }
+
       switch(line.opcode.op){
         case output:{
+          std::cout << label << endl;
           outputLookup.push_back(label);
+          std::cout << storeLookup.back() << endl;
         }
         case store:{
           storeLookup.push_back(label);
@@ -415,6 +438,10 @@ void printEdges(std::vector<Inst> &block)
         default:
           break;
       }
+
+      for(auto l: storeLookup){
+        std::cout << l << endl;
+      } std::cout << " " << endl;
     }
 
     for (int i = 1; i < output1.size()-1; ++i) {
