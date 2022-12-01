@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <climits>
+#include <unordered_map>
 
 using namespace std;
 
@@ -309,8 +310,8 @@ std::vector<Inst> allocate(std::vector<Inst> &block, int prs)
 void printEdges(std::vector<Inst> &block)
 {
 
-    std::cout << "returning all the edges association" << std::endl;
-    std::vector<std::vector<int>> output(block.size()+2);
+    std::cout << "\nreturning all the edges association" << std::endl;
+    std::vector<std::vector<int>> output1(block.size()+2);
     std::vector<int> lookup(vrName+2,-1);
     for(auto line : block)
     {
@@ -328,8 +329,8 @@ void printEdges(std::vector<Inst> &block)
                     std::exit(1);
                 }
 
-                output[label].push_back(lookup[vr1]);
-                output[label].push_back(lookup[vr2]);
+                output1[label].push_back(lookup[vr1]);
+                output1[label].push_back(lookup[vr2]);
                 lookup[dest] = label;
             }
                 break;
@@ -349,7 +350,7 @@ void printEdges(std::vector<Inst> &block)
                         std::cout << "bad bad bad" << std::endl;
                         std::exit(1);
                     }
-                    output[label].push_back(lookup[vr1]);
+                    output1[label].push_back(lookup[vr1]);
                     lookup[dest] = label;
 
                 } else { // store
@@ -361,8 +362,8 @@ void printEdges(std::vector<Inst> &block)
                         std::exit(1);
                     }
 
-                    output[label].push_back(lookup[vr1]);
-                    output[label].push_back(lookup[vr2]);
+                    output1[label].push_back(lookup[vr1]);
+                    output1[label].push_back(lookup[vr2]);
                 }
                 // store is op1 op2
             }
@@ -371,17 +372,63 @@ void printEdges(std::vector<Inst> &block)
         }
     }
 
-    for (int i = 1; i < output.size(); ++i) {
+    //unordered_map<Inst,std::vector<int>> instLookup;
+    //unordered_map<Instructions,vector<int>> instLookup;
+    vector<int> storeLookup;
+    vector<int> outputLookup;
+    vector<int> loadLookup;
+    //storeLookup.push_back(20);
+    //outputLookup.push_back(21);
+    //loadLookup.push_back(22);
+    for(auto line: block){
+      int label = line.label;
+      //std::cout << label << endl;
+      if(line.opcode.op == store || line.opcode.op == store || line.opcode.op == load)
+      switch(line.opcode.op){
+        case output:{
+          if(outputLookup.size()>0)
+          output1[label].push_back(outputLookup.back());
+        }
+        case store:{
+          if(outputLookup.size()>0)
+          output1[label].push_back(outputLookup.back());
+          for(int k = 0; k < loadLookup.size(); k++){
+            output1[label].push_back(loadLookup[k]);
+          }
+        }
+        //all
+        default:
+          if(storeLookup.size()>0)
+          output1[label].push_back(storeLookup.back());
+      }
+      if(line.opcode.op == store || line.opcode.op == store || line.opcode.op == load)
+      switch(line.opcode.op){
+        case output:{
+          outputLookup.push_back(label);
+        }
+        case store:{
+          storeLookup.push_back(label);
+        }
+        case load:{
+          loadLookup.push_back(label);
+        }
+        default:
+          break;
+      }
+    }
+
+    for (int i = 1; i < output1.size()-1; ++i) {
         std::cout << "n" << i << " \{";
-        for(int j = 0; j < output[i].size(); j++){
-        int num = output[i][j];
+        for(int j = 0; j < output1[i].size(); j++){
+        int num = output1[i][j];
             std::cout << " n" << num;
-            if(j + 1 < output[i].size()){
+            if(j + 1 < output1[i].size()){
               std::cout << ",";
             }
         }
         std::cout << " \} \n";
     }
+
 
     /*
     output: List[List[Int]] = [[]*number of lines]
