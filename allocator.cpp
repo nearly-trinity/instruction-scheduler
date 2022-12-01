@@ -311,8 +311,6 @@ std::vector<Inst> allocate(std::vector<Inst> &block, int prs)
 
 std::vector<std::vector<int>> printEdges(std::vector<Inst> &block)
 {
-
-    std::cout << "returning all the edges association" << std::endl;
     std::vector<std::vector<int>> output(block.size() + 1);
     std::vector<int> lookup(vrName + 2, -1);
     for (auto line : block)
@@ -382,10 +380,12 @@ std::vector<std::vector<int>> printEdges(std::vector<Inst> &block)
             break;
         }
     }
-
+    std::cout << "edges: " << std::endl;
     for (int i = 1; i < output.size(); ++i)
     {
-        std::cout << "n" << i << " \{";
+        std::string s = "   n" + std::to_string(i) + ":";
+        std::string gap(9-s.length(), ' ');
+        std::cout << s << gap << "{";
         for (int j = 0; j < output[i].size(); j++)
         {
             int num = output[i][j];
@@ -428,25 +428,27 @@ std::unordered_map<Instructions, int> latencyLookup;
 
 void traverse(int root, std::vector<int> &weights, std::vector<std::vector<int>> graph, std::vector<Inst> &block)
 {
-    std::cout << "traversing: " << root << std::endl;
     // we know graph is acyclic
     // can probably do basic DFS here
-    std::set<int> seen;
     std::vector<int> stack;
     stack.push_back(root);
+
+    weights[root] = latencyLookup[block[root - 1].opcode.op];
     while (stack.size() != 0)
     {
         int node = stack.back();
         stack.pop_back();
-        seen.insert(node);
         // for each child of node, update its value in weights
         for (int child : graph[node])
         {
-            if (seen.find(child) != seen.end())
-                continue;
+            // calculate new weight for child coming from this parent
+            int weight = weights[node] + latencyLookup[block[child - 1].opcode.op];
 
-            int weight = weights[node] + latencyLookup[block[node - 1].opcode.op];
-            weights[child] = std::min(weight, weights[child]);
+            // if the new weight > existing weight (default: MIN_INT)
+            if (weight > weights[child])
+                weights[child] = weight;
+
+            // append the child for DFS
             stack.push_back(child);
         }
     }
@@ -467,28 +469,39 @@ void printWeights(std::vector<Inst> &block, std::vector<std::vector<int>> graph)
         {output, 1},
     });
 
-    std::set<int> nodes;
     // init list of all nodes in the graph
+    std::set<int> nodes;
     for (int i = 1; i < block.size() + 1; ++i)
         nodes.insert(i);
 
-    // for each key (i) and value (graph[i])
-    for (int i = 1; i < graph.size(); ++i)
+    // for each key (node) and value (graph[node])
+    for (int node = 1; node < graph.size(); ++node)
     {
-        for (int node : graph[i])
+        for (int neighbor : graph[node])
         {
             // if anything depends on it remove it
-            nodes.erase(node);
+            nodes.erase(neighbor);
         }
     }
-    // nodes now contains all roots
+    // "nodes" now only contains roots
 
-    // traverse graph from the nodes in nodes
-    std::vector<int> weights(graph.size());
+    // init collection for storing weights
+    std::vector<int> weights(graph.size(), INT_MIN);
+
+    // traverse graph starting from the root nodes
     for (auto itr : nodes)
     {
-        // for each root, traverse through all of its neighbors and calculate their weights
+        // dfs each root and update weights in the recursive tree
         traverse(itr, weights, graph, block);
+    }
+
+    // display weights
+    std::cout << "weights: " << std::endl;
+    for (int i = 1; i < weights.size(); ++i)
+    {
+        std::string s = "   n" + std::to_string(i) + ":";
+        std::string gap(9-s.length(), ' ');
+        std::cout << s << gap << weights[i] << std::endl;
     }
 
     return;

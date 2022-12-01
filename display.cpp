@@ -56,8 +56,12 @@ void printOpcode(OpInst token) {
     cout << lexeme;
 }
 
+
+int gapSize = 9;
 void printILOCLine(Inst &iloc, int regFlag) {
-    cout << "    n" << iloc.label << ": ";
+    std::string s = "   n" + std::to_string(iloc.label) + ":";
+    std::string gap(gapSize-s.length(), ' ');
+    std::cout << s << gap;
     switch (iloc.opcode.cat) {
     case ARITHOP:
         printOpcode(iloc.opcode);
