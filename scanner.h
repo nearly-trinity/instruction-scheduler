@@ -56,7 +56,7 @@ struct Token
 class Op
 {
 private:
-    int padding = 4;
+    int padding = 2;
 
 public:
     Op();
