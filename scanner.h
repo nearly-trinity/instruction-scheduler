@@ -56,7 +56,7 @@ struct Token
 class Op
 {
 private:
-    int padding = 4;
+    int padding = 2;
 
 public:
     Op();
@@ -94,5 +94,5 @@ std::unordered_map<int, Token> setupToken();
 void setupTables();
 
 void printNodes(std::vector<Inst> &ilocLines);
-void printEdges(std::vector<Inst> &ilocLines);
-void printWeights(std::vector<Inst> &ilocLines);
+std::vector<std::vector<int>> printEdges(std::vector<Inst> &ilocLines);
+void printWeights(std::vector<Inst> &ilocLines, std::vector<std::vector<int>> graph);

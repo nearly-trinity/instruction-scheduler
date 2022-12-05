@@ -1,5 +1,7 @@
 # Project 4: Instruction Scheduler
 
+NATHAN EARLY AND JULIA ALFORD
+
 In this project, you will implement the most interest part of an an instruction scheduling algorithm: building the dependence tree and computing the latency-weighted distance to root for each node. Your program will takes
 as input a sequence of branch-free operations. You will transform the instructions by computing the virtual registers, and then outputint a
 distance-labeled graph. To simplify matters, the test blocks do not read any input files. All data used by a given test block is contained in the test block or entered  using the ILOC simulator’s  `–i` option.

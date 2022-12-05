@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
 {
     bool help;
     bool print;
-    bool tokens;
     bool allocate_flag;
     print = false;
     help = false;
@@ -72,10 +71,9 @@ int main(int argc, char *argv[])
         internals = scanner(file);
         // this will populate the IR with vr's and nu (not needed)
         computeLastUse(internals);
-        printILOC(internals,1);
-        printEdges(internals);
-
-
-        // for NODES: need to write a print function and increment the index by one
+        std::cout << "nodes:" << std::endl;
+        printILOC(internals, 1);
+        std::vector<std::vector<int>> graph = printEdges(internals);
+        printWeights(internals, graph);
     }
 }
