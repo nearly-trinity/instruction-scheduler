@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <unordered_map>
 
+
 using namespace std;
 
 int debug = false;
@@ -311,6 +312,7 @@ std::vector<Inst> allocate(std::vector<Inst> &block, int prs)
 
 std::vector<std::vector<int>> printEdges(std::vector<Inst> &block)
 {
+
     std::vector<std::vector<int>> output(block.size() + 1);
     std::vector<int> lookup(vrName + 2, -1);
     for (auto line : block)
@@ -357,7 +359,10 @@ std::vector<std::vector<int>> printEdges(std::vector<Inst> &block)
                     std::cout << "bad bad bad" << std::endl;
                     std::exit(1);
                 }
-                output[label].push_back(lookup[vr1]);
+                if(std::find(output1[label].begin(), output1[label].end(), lookup[vr1]) == output1[label].end())
+                output1[label].push_back(lookup[vr1]);
+                if(std::find(output1[label].begin(), output1[label].end(), lookup[vr2]) == output1[label].end())
+                output1[label].push_back(lookup[vr2]);
                 lookup[dest] = label;
             }
             else
@@ -365,10 +370,37 @@ std::vector<std::vector<int>> printEdges(std::vector<Inst> &block)
                 int vr1 = line.op1.vr;
                 int vr2 = line.op2.vr;
 
-                if (lookup[vr1] == -1 || lookup[vr2] == -1)
-                {
-                    std::cout << " bad bad bad " << std::endl;
-                    std::exit(1);
+            case LOADI: {
+                int dest = line.dest.vr;
+                lookup[dest] = label;
+            }
+                break;
+            case MEMOP: {
+                // load is op1 dest
+                if(line.opcode.op == load) {
+                    int vr1 = line.op1.vr;
+                    int dest = line.dest.vr;
+
+                    if(lookup[vr1] == -1) {
+                        std::cout << "bad bad bad" << std::endl;
+                        std::exit(1);
+                    }
+                    if(std::find(output1[label].begin(), output1[label].end(), lookup[vr1]) == output1[label].end())
+                    output1[label].push_back(lookup[vr1]);
+                    lookup[dest] = label;
+
+                } else { // store
+                    int vr1 = line.op1.vr;
+                    int vr2 = line.op2.vr;
+
+                    if(lookup[vr1] == -1 or lookup[vr2] == -1) {
+                        std::cout << " bad bad bad " << std::endl;
+                        std::exit(1);
+                    }
+                    if(std::find(output1[label].begin(), output1[label].end(), lookup[vr1]) == output1[label].end())
+                    output1[label].push_back(lookup[vr1]);
+                    if(std::find(output1[label].begin(), output1[label].end(), lookup[vr2]) == output1[label].end())
+                    output1[label].push_back(lookup[vr2]);
                 }
 
                 output[label].push_back(lookup[vr1]);
@@ -380,19 +412,83 @@ std::vector<std::vector<int>> printEdges(std::vector<Inst> &block)
             break;
         }
     }
-    std::cout << "edges: " << std::endl;
-    for (int i = 1; i < output.size(); ++i)
-    {
-        std::string s = "   n" + std::to_string(i) + ":";
-        std::string gap(9-s.length(), ' ');
-        std::cout << s << gap << "{";
-        for (int j = 0; j < output[i].size(); j++)
-        {
-            int num = output[i][j];
+    //unordered_map<Inst,std::vector<int>> instLookup;
+    //unordered_map<Instructions,vector<int>> instLookup;
+    vector<int> storeLookup;
+    vector<int> outputLookup;
+    vector<int> loadLookup;
+    //storeLookup.push_back(20);
+    //outputLookup.push_back(21);
+    //loadLookup.push_back(22);
+    for(auto line: block){
+      int label = line.label;
+      //std::cout << label << endl;
+      if(line.opcode.op == output || line.opcode.op == store || line.opcode.op == load){
+      switch(line.opcode.op){
+        case output:{
+
+          if(outputLookup.size()>0)
+          if(std::find(output1[label].begin(), output1[label].end(), outputLookup.back()) == output1[label].end()){
+          output1[label].push_back(outputLookup.back());
+          }
+
+          if(storeLookup.size()>0){
+          if(std::find(output1[label].begin(), output1[label].end(), storeLookup.back()) == output1[label].end()){
+              int num = storeLookup.back();
+              output1[label].push_back(num);
+
+            }
+          }
+        }
+
+        case store:{
+          if(outputLookup.size()>0)
+          if(std::find(output1[label].begin(), output1[label].end(), outputLookup.back()) == output1[label].end()){
+          output1[label].push_back(outputLookup.back());
+          std::cout << "C\t" << outputLookup.back() << endl;
+          }
+          for(int k = 0; k < loadLookup.size(); k++){
+            if(std::find(output1[label].begin(), output1[label].end(), loadLookup[k]) == output1[label].end()){
+              if((storeLookup.size() > 0 && storeLookup.back() <= loadLookup[k]) || storeLookup.size() == 0){
+                output1[label].push_back(loadLookup[k]);
+              }
+            }
+          }
+        }
+        case load:{
+          if(storeLookup.size()>0){
+          if(std::find(output1[label].begin(), output1[label].end(), storeLookup.back()) == output1[label].end()){
+              output1[label].push_back(storeLookup.back());
+            }
+          }
+        }
+        default:
+          break;
+      }
+
+
+    }
+
+
+      if(line.opcode.op == output){
+          outputLookup.push_back(label);
+        }
+        else if (line.opcode.op == store){
+          storeLookup.push_back(label);
+        }
+        else if (line.opcode.op == load){
+          loadLookup.push_back(label);
+        }
+    }
+
+    for (int i = 1; i < output1.size()-1; ++i) {
+        std::cout << "n" << i << " \{";
+        sort(output1[i].begin(), output1[i].end());
+        for(int j = 0; j < output1[i].size(); j++){
+        int num = output1[i][j];
             std::cout << " n" << num;
-            if (j + 1 < output[i].size())
-            {
-                std::cout << ",";
+            if(j + 1 < output1[i].size()){
+              std::cout << ",";
             }
         }
         std::cout << " \} \n";
