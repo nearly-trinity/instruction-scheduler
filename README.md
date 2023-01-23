@@ -1,4 +1,4 @@
-# Project 4: Instruction Scheduler
+# Instruction Scheduler
 
 NATHAN EARLY AND JULIA ALFORD
 
