@@ -7,12 +7,6 @@ as input a sequence of branch-free operations. You will transform the instructio
 distance-labeled graph. To simplify matters, the test blocks do not read any input files. All data used by a given test block is contained in the test block or entered  using the ILOC simulator’s  `–i` option.
 
 
-### Due Dates:
-
-* Milestone: **11/29**
-* Full Scheduler: **12/6**
-
-
 ## ILOC Subset
 
 Your input is a single basic block of code consisting of instructions
